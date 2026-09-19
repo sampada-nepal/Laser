@@ -52,9 +52,28 @@ python track.py --prompts "green apple,wine bottle" --source 0 --show-fps
   `track.py` to `cv2.legacy.TrackerKCF_create()` -- faster, a bit less robust to
   the object changing scale/orientation.
 
-## Next steps (once CV is validated)
+## Pan/tilt hardware tracking
 
-1. Camera-to-servo calibration (map pixel coords -> pan/tilt angles).
-2. Serial/PWM control loop to an Arduino or Pi driving the pan-tilt mount.
-3. Optional: depth sensing (stereo or RealSense) if you need the laser to
+`pan_tilt_track.py` closes the loop: same detect+track logic as `track.py`,
+but it converts the object's offset from the frame center into pan/tilt
+servo angles and streams them over serial to
+[`arduino/servo_controller/servo_controller.ino`](../arduino/servo_controller/servo_controller.ino)
+(the same sketch `servo_gui.py` drives) -- flash that sketch to the Arduino
+first, servo1 on pin 9 (pan, channel 1) and servo2 on pin 10 (tilt, channel 2).
+
+```bash
+python pan_tilt_track.py --prompts "green apple" --port /dev/cu.usbmodem14101
+python pan_tilt_track.py --prompts "face" --dry-run   # test the CV/control loop without hardware
+```
+
+Power servos from an external 5V supply, not the Arduino's USB rail --
+two servos moving at once can brown out the board.
+
+If the mount moves the wrong direction, try `--invert-pan`, `--invert-tilt`,
+or `--swap-axes` before rewiring anything. `--gain` and `--deadzone` control
+how aggressively/jittery the tracking is -- see the script's `--help`.
+
+## Next steps
+
+1. Optional: depth sensing (stereo or RealSense) if you need the laser to
    converge precisely rather than just aim in the object's general direction.
