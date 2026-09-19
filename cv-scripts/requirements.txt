@@ -1,0 +1,5 @@
+# CV proof-of-concept: open-vocabulary detection + tracking
+ultralytics>=8.1.0        # YOLO-World lives here
+opencv-contrib-python>=4.8.0   # NOTE: contrib build, not plain opencv-python --
+                                 # the legacy tracker API (CSRT) needs the contrib modules.
+numpy
