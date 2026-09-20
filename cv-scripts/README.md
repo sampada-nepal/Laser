@@ -79,6 +79,12 @@ and `--pan-max` (tilt holds still) at `--scan-speed` degrees/frame, until
 detection picks something up -- then it switches to normal centering. Pass
 `--no-scan` to just hold position while searching instead.
 
+Unlike `track.py` (which re-detects every `--redetect-interval` frames),
+`pan_tilt_track.py` runs YOLO-World on a fixed wall-clock schedule via
+`--detect-hz` (default 2/sec), independent of camera FPS. The CSRT tracker
+still updates every frame in between, so panning stays smooth even at a
+low detection rate.
+
 ## Next steps
 
 1. Optional: depth sensing (stereo or RealSense) if you need the laser to

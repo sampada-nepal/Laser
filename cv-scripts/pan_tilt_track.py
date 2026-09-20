@@ -34,6 +34,11 @@ While no target is tracked, it holds position for --scan-delay seconds
 (default 5s), then the pan servo sweeps back and forth between --pan-min
 and --pan-max (tilt holds still) until detection finds something, at which
 point it hands off to normal centering. Disable sweeping with --no-scan.
+
+YOLO-World detection is expensive, so it runs at a fixed rate (--detect-hz,
+default 2/sec) regardless of camera FPS. Between detections, the cheap CSRT
+tracker runs every frame, so panning stays smooth even though detection is
+slow.
 """
 
 import argparse
@@ -59,8 +64,9 @@ def parse_args():
     p.add_argument("--model", type=str, default="yolov8s-worldv2.pt",
                     help="YOLO-World checkpoint (auto-downloaded by ultralytics)")
     p.add_argument("--conf", type=float, default=0.15, help="Detection confidence threshold")
-    p.add_argument("--redetect-interval", type=int, default=30,
-                    help="Force a fresh detection every N frames even if tracking is fine")
+    p.add_argument("--detect-hz", type=float, default=2.0,
+                    help="How many times/second YOLO-World runs; CSRT tracking (and panning) "
+                         "still updates every frame in between")
     p.add_argument("--device", type=str, default=None, help="'cpu', 'cuda:0', 'mps', etc.")
 
     p.add_argument("--port", type=str, default=None,
@@ -199,9 +205,11 @@ def main():
     scan_dir = 1
     lost_since = time.time()
 
+    min_detect_interval = 1.0 / args.detect_hz if args.detect_hz > 0 else 0.0
+    last_detect_t = 0.0
+
     tracker = None
     tracking = False
-    frame_idx = 0
     last_fps_t = time.time()
     fps = 0.0
 
@@ -213,11 +221,12 @@ def main():
             print("[run] end of stream / camera read failed")
             break
         h, w = frame.shape[:2]
-        frame_idx += 1
 
-        need_detect = not tracking or frame_idx % args.redetect_interval == 0
+        now = time.time()
+        can_detect = (now - last_detect_t) >= min_detect_interval
 
-        if need_detect:
+        if can_detect:
+            last_detect_t = now
             box = detect_target(model, frame, args.conf)
             if box is not None:
                 x1, y1, x2, y2 = clamp_box(box, w, h)
@@ -228,7 +237,7 @@ def main():
             else:
                 tracking = False
                 status = "searching..."
-        else:
+        elif tracking:
             ok_t, bbox = tracker.update(frame)
             if ok_t:
                 x1, y1, wd, ht = bbox
@@ -237,6 +246,8 @@ def main():
             else:
                 tracking = False
                 status = "lost -> redetecting"
+        else:
+            status = "searching..."
 
         if tracking:
             lost_since = None
@@ -298,6 +309,7 @@ def main():
             break
         elif key == ord("r"):
             tracking = False
+            last_detect_t = 0.0  # bypass the --detect-hz gate for an immediate redetect
         elif key == ord("c"):
             pan, tilt = 90.0, 90.0
             link.send(1, pan)
