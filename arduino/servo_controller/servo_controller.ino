@@ -3,6 +3,12 @@
 Servo servo1;
 Servo servo2;
 
+// Servo 1 (pan) hits its mechanical stops outside this range -- found by
+// hand with servo_gui.py. Hard-clamped here so no bug or bad command
+// upstream can ever drive it past the stops.
+const int SERVO1_MIN = 11;
+const int SERVO1_MAX = 165;
+
 void setup() {
   Serial.begin(115200);
   servo1.attach(9);
@@ -26,6 +32,6 @@ void loop() {
   }
   if (angle < 0 || angle > 180) return;
 
-  if (channel == 1) servo1.write(angle);
+  if (channel == 1) servo1.write(constrain(angle, SERVO1_MIN, SERVO1_MAX));
   if (channel == 2) servo2.write(angle);
 }

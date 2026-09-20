@@ -28,11 +28,16 @@ class ServoController(tk.Tk):
         self.connect_button = ttk.Button(frame, text="Connect", command=self.toggle_connection)
         self.connect_button.grid(row=1, column=1, pady=(10, 20))
 
+        # Servo 1 (pan) hits its mechanical stops outside 11-165 -- found by
+        # hand. The Arduino sketch also hard-clamps to this range, but
+        # limiting the slider here keeps the UI honest about what it'll do.
+        limits = ((11, 165), (0, 180))
         for index, label in enumerate(("Servo 1", "Servo 2")):
             row = index + 2
             ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w")
+            lo, hi = limits[index]
             slider = ttk.Scale(
-                frame, from_=0, to=180, length=260,
+                frame, from_=lo, to=hi, length=260,
                 command=lambda value, i=index: self.set_angle(i, value),
             )
             slider.set(90)

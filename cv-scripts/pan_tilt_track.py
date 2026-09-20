@@ -72,8 +72,10 @@ def parse_args():
                     help="Max degrees/frame moved when the object is at the frame edge")
     p.add_argument("--deadzone", type=float, default=0.03,
                     help="Fraction of half-frame the object can drift within before reacting")
-    p.add_argument("--pan-min", type=float, default=0.0)
-    p.add_argument("--pan-max", type=float, default=180.0)
+    p.add_argument("--pan-min", type=float, default=11.0,
+                    help="Servo 1's mechanical stop -- don't lower without checking the mount")
+    p.add_argument("--pan-max", type=float, default=165.0,
+                    help="Servo 1's mechanical stop -- don't raise without checking the mount")
     p.add_argument("--tilt-min", type=float, default=0.0)
     p.add_argument("--tilt-max", type=float, default=180.0)
     p.add_argument("--invert-pan", action="store_true")
