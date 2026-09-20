@@ -86,7 +86,10 @@ def parse_args():
     p.add_argument("--tilt-min", type=float, default=0.0)
     p.add_argument("--tilt-max", type=float, default=180.0)
     p.add_argument("--invert-pan", action="store_true")
-    p.add_argument("--invert-tilt", action="store_true")
+    p.add_argument("--no-invert-tilt", dest="invert_tilt", action="store_false",
+                    help="Servo 2's polarity was found reversed on this mount, so tilt is "
+                         "inverted by default -- pass this to undo that")
+    p.set_defaults(invert_tilt=True)
     p.add_argument("--swap-axes", action="store_true",
                     help="Swap which detected axis (x/y) drives channel 1 vs channel 2")
 
