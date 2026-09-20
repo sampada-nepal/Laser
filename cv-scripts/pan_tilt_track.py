@@ -83,7 +83,8 @@ def parse_args():
                     help="Servo 1's mechanical stop -- don't lower without checking the mount")
     p.add_argument("--pan-max", type=float, default=165.0,
                     help="Servo 1's mechanical stop -- don't raise without checking the mount")
-    p.add_argument("--tilt-min", type=float, default=0.0)
+    p.add_argument("--tilt-min", type=float, default=90.0,
+                    help="Servo 2's mechanical stop -- it flips around below this, don't lower without checking the mount")
     p.add_argument("--tilt-max", type=float, default=180.0)
     p.add_argument("--no-invert-pan", dest="invert_pan", action="store_false",
                     help="Servo 1's polarity was found reversed on this mount, so pan is "

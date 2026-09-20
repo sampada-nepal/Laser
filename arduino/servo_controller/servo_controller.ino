@@ -9,6 +9,10 @@ Servo servo2;
 const int SERVO1_MIN = 11;
 const int SERVO1_MAX = 165;
 
+// Servo 2 (tilt) flips around outside this range. Same hard clamp.
+const int SERVO2_MIN = 90;
+const int SERVO2_MAX = 180;
+
 void setup() {
   Serial.begin(115200);
   servo1.attach(9);
@@ -33,5 +37,5 @@ void loop() {
   if (angle < 0 || angle > 180) return;
 
   if (channel == 1) servo1.write(constrain(angle, SERVO1_MIN, SERVO1_MAX));
-  if (channel == 2) servo2.write(angle);
+  if (channel == 2) servo2.write(constrain(angle, SERVO2_MIN, SERVO2_MAX));
 }

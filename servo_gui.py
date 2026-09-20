@@ -28,10 +28,11 @@ class ServoController(tk.Tk):
         self.connect_button = ttk.Button(frame, text="Connect", command=self.toggle_connection)
         self.connect_button.grid(row=1, column=1, pady=(10, 20))
 
-        # Servo 1 (pan) hits its mechanical stops outside 11-165 -- found by
-        # hand. The Arduino sketch also hard-clamps to this range, but
-        # limiting the slider here keeps the UI honest about what it'll do.
-        limits = ((11, 165), (0, 180))
+        # Servo 1 (pan) hits its mechanical stops outside 11-165, and servo 2
+        # (tilt) flips around outside 90-180 -- both found by hand. The
+        # Arduino sketch also hard-clamps to these ranges, but limiting the
+        # sliders here keeps the UI honest about what it'll do.
+        limits = ((11, 165), (90, 180))
         for index, label in enumerate(("Servo 1", "Servo 2")):
             row = index + 2
             ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w")
@@ -45,7 +46,7 @@ class ServoController(tk.Tk):
             self.sliders.append(slider)
             ttk.Label(frame, textvariable=self.angles[index], width=4).grid(row=row, column=2)
 
-        ttk.Button(frame, text="Center both (90°)", command=self.center).grid(
+        ttk.Button(frame, text="Center both", command=self.center).grid(
             row=4, column=1, pady=(14, 8)
         )
         ttk.Label(frame, textvariable=self.status).grid(row=5, column=0, columnspan=3)
@@ -99,7 +100,8 @@ class ServoController(tk.Tk):
 
     def center(self):
         for slider in self.sliders:
-            slider.set(90)
+            lo, hi = float(slider.cget("from")), float(slider.cget("to"))
+            slider.set(round((lo + hi) / 2))
 
     def close(self):
         if self.port:
