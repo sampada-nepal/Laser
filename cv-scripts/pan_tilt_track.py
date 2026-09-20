@@ -29,6 +29,10 @@ Tuning:
                       flip direction if the mount moves the wrong way
     --swap-axes      swap which detected axis drives channel 1 vs 2, if pan
                       and tilt servos are wired opposite to pin 9/10
+
+While no target is tracked, the pan servo sweeps back and forth between
+--pan-min and --pan-max (tilt holds still) until detection finds something,
+at which point it hands off to normal centering. Disable with --no-scan.
 """
 
 import argparse
@@ -76,6 +80,12 @@ def parse_args():
     p.add_argument("--invert-tilt", action="store_true")
     p.add_argument("--swap-axes", action="store_true",
                     help="Swap which detected axis (x/y) drives channel 1 vs channel 2")
+
+    p.add_argument("--scan-speed", type=float, default=1.5,
+                    help="Pan degrees/frame swept while searching for a target (tilt holds still)")
+    p.add_argument("--no-scan", dest="scan", action="store_false",
+                    help="Hold position while searching instead of sweeping pan back and forth")
+    p.set_defaults(scan=True)
 
     p.add_argument("--show-fps", action="store_true")
     return p.parse_args()
@@ -181,6 +191,7 @@ def main():
     pan, tilt = 90.0, 90.0
     link.send(1, pan)
     link.send(2, tilt)
+    scan_dir = 1
 
     tracker = None
     tracking = False
@@ -245,6 +256,16 @@ def main():
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
             cv2.drawMarker(frame, (cx, cy), (0, 0, 255),
                             markerType=cv2.MARKER_CROSS, markerSize=20, thickness=2)
+        elif args.scan:
+            pan += scan_dir * args.scan_speed
+            if pan >= args.pan_max:
+                pan = args.pan_max
+                scan_dir = -1
+            elif pan <= args.pan_min:
+                pan = args.pan_min
+                scan_dir = 1
+            link.send(1, pan)
+            status += " (scanning)"
 
         cv2.putText(frame, f"{status}  pan={pan:.0f} tilt={tilt:.0f}", (10, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)

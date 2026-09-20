@@ -73,6 +73,12 @@ If the mount moves the wrong direction, try `--invert-pan`, `--invert-tilt`,
 or `--swap-axes` before rewiring anything. `--gain` and `--deadzone` control
 how aggressively/jittery the tracking is -- see the script's `--help`.
 
+While no target is found, the pan servo sweeps back and forth between
+`--pan-min` and `--pan-max` (tilt holds still) at `--scan-speed`
+degrees/frame, until detection picks something up -- then it switches to
+normal centering. Pass `--no-scan` to just hold position while searching
+instead.
+
 ## Next steps
 
 1. Optional: depth sensing (stereo or RealSense) if you need the laser to
