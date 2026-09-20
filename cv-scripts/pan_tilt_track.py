@@ -30,9 +30,10 @@ Tuning:
     --swap-axes      swap which detected axis drives channel 1 vs 2, if pan
                       and tilt servos are wired opposite to pin 9/10
 
-While no target is tracked, the pan servo sweeps back and forth between
---pan-min and --pan-max (tilt holds still) until detection finds something,
-at which point it hands off to normal centering. Disable with --no-scan.
+While no target is tracked, it holds position for --scan-delay seconds
+(default 5s), then the pan servo sweeps back and forth between --pan-min
+and --pan-max (tilt holds still) until detection finds something, at which
+point it hands off to normal centering. Disable sweeping with --no-scan.
 """
 
 import argparse
@@ -85,6 +86,8 @@ def parse_args():
 
     p.add_argument("--scan-speed", type=float, default=1.5,
                     help="Pan degrees/frame swept while searching for a target (tilt holds still)")
+    p.add_argument("--scan-delay", type=float, default=5.0,
+                    help="Seconds to hold position after losing/never finding a target before the search sweep starts")
     p.add_argument("--no-scan", dest="scan", action="store_false",
                     help="Hold position while searching instead of sweeping pan back and forth")
     p.set_defaults(scan=True)
@@ -194,6 +197,7 @@ def main():
     link.send(1, pan)
     link.send(2, tilt)
     scan_dir = 1
+    lost_since = time.time()
 
     tracker = None
     tracking = False
@@ -235,6 +239,11 @@ def main():
                 status = "lost -> redetecting"
 
         if tracking:
+            lost_since = None
+        elif lost_since is None:
+            lost_since = time.time()
+
+        if tracking:
             x1, y1, x2, y2 = map(int, (x1, y1, x2, y2))
             cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
 
@@ -259,15 +268,19 @@ def main():
             cv2.drawMarker(frame, (cx, cy), (0, 0, 255),
                             markerType=cv2.MARKER_CROSS, markerSize=20, thickness=2)
         elif args.scan:
-            pan += scan_dir * args.scan_speed
-            if pan >= args.pan_max:
-                pan = args.pan_max
-                scan_dir = -1
-            elif pan <= args.pan_min:
-                pan = args.pan_min
-                scan_dir = 1
-            link.send(1, pan)
-            status += " (scanning)"
+            elapsed = time.time() - lost_since
+            if elapsed < args.scan_delay:
+                status += f" (scan in {args.scan_delay - elapsed:.1f}s)"
+            else:
+                pan += scan_dir * args.scan_speed
+                if pan >= args.pan_max:
+                    pan = args.pan_max
+                    scan_dir = -1
+                elif pan <= args.pan_min:
+                    pan = args.pan_min
+                    scan_dir = 1
+                link.send(1, pan)
+                status += " (scanning)"
 
         cv2.putText(frame, f"{status}  pan={pan:.0f} tilt={tilt:.0f}", (10, 30),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 0), 2)
