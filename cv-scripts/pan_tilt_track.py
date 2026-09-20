@@ -75,7 +75,7 @@ def parse_args():
     p.add_argument("--dry-run", action="store_true",
                     help="Run the CV loop and print target angles without opening serial")
 
-    p.add_argument("--gain", type=float, default=3.0,
+    p.add_argument("--gain", type=float, default=1.0,
                     help="Max degrees/frame moved when the object is at the frame edge")
     p.add_argument("--deadzone", type=float, default=0.03,
                     help="Fraction of half-frame the object can drift within before reacting")
